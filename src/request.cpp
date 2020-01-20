@@ -58,4 +58,14 @@ server::request::request(char buffer[1024]) {
             }
         }
     }
+    this->parseCookies();
+}
+
+void server::request::parseCookies() {
+    std::vector<std::string> cookies = utils::split(this->headers["Cookie"],';');
+    for(unsigned int i = 0; i < cookies.size(); i++) {
+        std::string cookie = cookies[i];
+        std::string::size_type cs = cookie.find("=");
+        this->cookies[cookie.substr(1,cs-1)] = cookie.substr(cs+1);
+    }
 }

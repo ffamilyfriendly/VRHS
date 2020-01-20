@@ -51,10 +51,6 @@ void server::HttpServer::lsn(int port,int opt) {
 
 
     int server_socket;
-
-    std::string fofHTML = "<html><body>lol not found</body></html>";
-    std::string fourOfour = "HTTP/1.0 404 Not Found\nContent-Type: text/html\nContent-Length: " + std::to_string(fofHTML.length()) + "\n\n" + fofHTML;
-
     if(listen(sock,5) < 0) {
         perror("cannot listen");
     } else {
@@ -71,10 +67,10 @@ void server::HttpServer::lsn(int port,int opt) {
         server::request req(buffer);
         server::response res;
         res.socket = client;
-        if(this->endpoints[req.path]) this->endpoints[req.path](res,req);
+        if(this->endpoints[req.type + req.path]) this->endpoints[req.type + req.path](res,req);
         else {
-            res.snd(fourOfour);
-            res.end();
+            std::map<std::string,std::string> info = {{"errcode","404"},{"method",req.type},{"path",req.path}};
+            res.renderFile("./404.html",info);
         }
     }
 }

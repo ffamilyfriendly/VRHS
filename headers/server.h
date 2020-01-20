@@ -52,8 +52,11 @@ namespace server {
         std::string data;
         void snd(std::string data);
         void end();
-        void sendFile(std::string path);
+        void sendFile(std::string path,std::string mime = "text/html");
+        void renderFile(std::string path,std::map<std::string,std::string> values);
+        void sendTC(std::string data);
         void status(short code);
+        void redirect(std::string path);
         private:
         void setHeaders();
         short code = 200;
@@ -62,10 +65,12 @@ namespace server {
     class request {
         public:
         request(char buffer[1024]);
+        void parseCookies();
         std::string path;
         std::string type;
         std::map<std::string,std::string> headers;
         std::map<std::string,std::string> query;
+        std::map<std::string,std::string> cookies;
     };
 
     class HttpServer {

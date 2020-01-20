@@ -1,9 +1,6 @@
 SOURCE = \
 	main.cpp \
-	../src/server.cpp \
-	../src/response.cpp \
-	../src/request.cpp \
-	../src/common.cpp
+	../bin/libVRHS.so \
 
 all:
 	g++ ${SOURCE} -o server
