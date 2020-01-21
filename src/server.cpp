@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include "../headers/server.h"
 
-void server::HttpServer::lsn(int port,int opt) {
-    char buffer[1024] = {0}; 
+void server::HttpServer::lsn(int port,int opt, int buffSize) {
+    char buffer[buffSize] = {0}; 
     this->port = port;
     struct sockaddr_in adress;
     struct sockaddr_storage their_addr;
@@ -63,15 +63,20 @@ void server::HttpServer::lsn(int port,int opt) {
             perror("accept");
         }
         read(client,buffer,sizeof(buffer));
-
         server::request req(buffer);
         server::response res;
         res.socket = client;
+
+        //check if endpoint is registered
         if(this->endpoints[req.type + req.path]) this->endpoints[req.type + req.path](res,req);
         else {
+            //if endpoint does not exists send 404 page
             std::map<std::string,std::string> info = {{"errcode","404"},{"method",req.type},{"path",req.path}};
             res.renderFile("./404.html",info);
         }
+
+        //free buffer
+        memset(buffer, 0, sizeof(buffer));
     }
 }
 

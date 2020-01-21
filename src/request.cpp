@@ -26,37 +26,37 @@ server::request::request(char buffer[1024]) {
     std::string header;
     std::string::size_type index;
     bool first = true;
-    while(std::getline(resp,header) && header != "\r") {
-        if(first) {
-            index = header.find("/",0);
-            std::string::size_type endOfPath = header.find("HTTP",index);
-            std::string _path = header.substr(index,endOfPath-index-1);
+    bool isHeader = true;
+    while(std::getline(resp,header)) {
+        if(header == "\r") isHeader = false;
+        if(isHeader) {
+            if(first) {
+                index = header.find("/",0);
+                std::string::size_type endOfPath = header.find("HTTP",index);
+                std::string _path = header.substr(index,endOfPath-index-1);
 
-            // main regex
-            std::regex url_regex (
-                R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
-                std::regex::extended
-            );
+                // main regex
+                std::regex url_regex (
+                    R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
+                    std::regex::extended
+                );
 
-            std::smatch url_match_res;
-            unsigned int count = 0;
-            if(std::regex_match(_path,url_match_res,url_regex)) {
-                this->path = url_match_res[5];
-                this->type = header.substr(0,index-1);
-                std::vector<std::string> _params = utils::split(url_match_res[7],'&');
-                for(unsigned int i = 0; i < _params.size(); i++) {
-                    std::string _param = _params[i];
-                    std::string::size_type qs = _param.find("=");
-                    this->query[_param.substr(0,qs)] = _param.substr(qs + 1);
+                std::smatch url_match_res;
+                if(std::regex_match(_path,url_match_res,url_regex)) {
+                    this->path = url_match_res[5];
+                    this->type = header.substr(0,index-1);
+                    std::vector<std::string> _params = utils::split(url_match_res[7],'&');
+                    for(unsigned int i = 0; i < _params.size(); i++) {
+                        std::vector<std::string> vl = utils::split(_params[i],'=');
+                        this->query[vl[0]] = vl[1];
+                    }
                 }
+                first = false;
+            } else {
+                std::vector<std::string> prts = utils::split(header,':');
+                this->headers[prts[0]] = prts[1].substr(1);
             }
-            first = false;
-        } else {
-            index = header.find(":",0);
-            if(index != std::string::npos) {
-                this->headers[header.substr(0,index)] = header.substr(index + 1);
-            }
-        }
+        } else if(header != "\r") this->data += header;
     }
     this->parseCookies();
 }
@@ -65,7 +65,17 @@ void server::request::parseCookies() {
     std::vector<std::string> cookies = utils::split(this->headers["Cookie"],';');
     for(unsigned int i = 0; i < cookies.size(); i++) {
         std::string cookie = cookies[i];
-        std::string::size_type cs = cookie.find("=");
-        this->cookies[cookie.substr(1,cs-1)] = cookie.substr(cs+1);
+        std::vector<std::string> cki = utils::split(cookie,'='); 
+        this->cookies[cki[0]] = cki[1];
     }
+}
+
+std::map<std::string,std::string> server::request::parseBody() {
+    std::map<std::string,std::string> body;
+    std::vector<std::string> values = utils::split(this->data,'&');
+    for(unsigned int i = 0; i < values.size(); i++) {
+        std::vector<std::string> k_v = utils::split(values[i],'=');
+        body[k_v[0]] = k_v[1];
+    }
+    return body;
 }

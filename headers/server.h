@@ -66,8 +66,10 @@ namespace server {
         public:
         request(char buffer[1024]);
         void parseCookies();
+        std::map<std::string,std::string> parseBody();
         std::string path;
         std::string type;
+        std::string data;
         std::map<std::string,std::string> headers;
         std::map<std::string,std::string> query;
         std::map<std::string,std::string> cookies;
@@ -75,7 +77,8 @@ namespace server {
 
     class HttpServer {
         public:
-        void lsn(int port,int opt = 1);
+        //defualt read buffer size is 34kb
+        void lsn(int port,int opt = 1, int buffSize = 1024 * 34); 
         std::map<std::string,void (*)(response,request)> endpoints;
         private:
         int port;
