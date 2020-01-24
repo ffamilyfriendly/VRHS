@@ -22,6 +22,11 @@ SOFTWARE.
 
 #include "../headers/server.h"
 
+bool matches(std::string e) {
+    std::cout << "lol ok" << std::endl;
+    return false;
+}
+
 void server::HttpServer::lsn(int port,int opt, int buffSize) {
     char buffer[buffSize] = {0}; 
     this->port = port;
@@ -68,13 +73,32 @@ void server::HttpServer::lsn(int port,int opt, int buffSize) {
         res.socket = client;
 
         //check if endpoint is registered
-        if(this->endpoints[req.type + req.path]) this->endpoints[req.type + req.path](res,req);
-        else {
-            //if endpoint does not exists send 404 page
-            std::map<std::string,std::string> info = {{"errcode","404"},{"method",req.type},{"path",req.path}};
-            res.renderFile("./404.html",info);
-        }
+        //std::find_if()
+        std::map<std::string,void (*)(server::response, server::request)>::iterator it = std::find_if(this->endpoints.begin(),this->endpoints.end(),
+            [req](const std::pair<std::string,void (*)(server::response, server::request)> & t) -> bool {
+                std::regex endPoint(t.first);
+                std::smatch url_match_res;
+                std::string matchThis = req.type+req.path;
+                if(std::regex_match(matchThis,url_match_res,endPoint)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        );
 
+        if(it != this->endpoints.end()) {
+            std::smatch matchParams;
+            std::regex mtchAgain(it->first);
+            std::string matchThis = req.type+req.path;
+            std::regex_match(matchThis,matchParams,mtchAgain);
+            req.captured = matchParams;
+            it->second(res,req);
+        } else {
+            std::string fof = "could not <b>" + req.type + "</b> to <b>" + req.path + "</b>";
+            res.status(404);
+            res.sendTC(fof);
+        }
         //free buffer
         memset(buffer, 0, sizeof(buffer));
     }

@@ -70,6 +70,7 @@ namespace server {
         std::string path;
         std::string type;
         std::string data;
+        std::smatch captured;
         std::map<std::string,std::string> headers;
         std::map<std::string,std::string> query;
         std::map<std::string,std::string> cookies;
