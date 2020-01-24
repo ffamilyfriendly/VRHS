@@ -32,9 +32,9 @@ SOFTWARE.
 #include <map>
 
 //defines
-#define version_major 1
-#define version_minor 0
-#define version_patch 0
+#define version_major "1"
+#define version_minor "1"
+#define version_patch "0"
 
 namespace server {
     struct sockaddr_in{
@@ -80,6 +80,7 @@ namespace server {
         public:
         //defualt read buffer size is 34kb
         void lsn(int port,int opt = 1, int buffSize = 1024 * 34); 
+        std::vector<void (*)(response,request)> middleware;
         std::map<std::string,void (*)(response,request)> endpoints;
         private:
         int port;

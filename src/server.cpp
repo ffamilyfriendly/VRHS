@@ -72,8 +72,11 @@ void server::HttpServer::lsn(int port,int opt, int buffSize) {
         server::response res;
         res.socket = client;
 
+        for(unsigned int i = 0; i < this->middleware.size(); i++) {
+            this->middleware[i](res,req);
+        }
+
         //check if endpoint is registered
-        //std::find_if()
         std::map<std::string,void (*)(server::response, server::request)>::iterator it = std::find_if(this->endpoints.begin(),this->endpoints.end(),
             [req](const std::pair<std::string,void (*)(server::response, server::request)> & t) -> bool {
                 std::regex endPoint(t.first);
@@ -94,10 +97,15 @@ void server::HttpServer::lsn(int port,int opt, int buffSize) {
             std::regex_match(matchThis,matchParams,mtchAgain);
             req.captured = matchParams;
             it->second(res,req);
+            it++;
         } else {
-            std::string fof = "could not <b>" + req.type + "</b> to <b>" + req.path + "</b>";
+            if(this->endpoints["GET/404"]) {
+                res.redirect("/404");
+            } else {
+            std::string fof = "<h1>404 - Not Found</h1> <ul> <li>rescource: <b>" + req.path + "</b></li> <li>method: <b>" + req.type + "</li></ul><hr><small>" + "VRHS v/" + version_major + "." + version_minor + "." + version_patch +"</small> - to replace this 404 page create an endpoint for GET/404";
             res.status(404);
             res.sendTC(fof);
+            }
         }
         //free buffer
         memset(buffer, 0, sizeof(buffer));
